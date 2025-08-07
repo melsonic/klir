@@ -114,6 +114,8 @@ func (dc *DockerClient) RemoveDockerContainers(ctx context.Context, cmd *cli.Com
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
+	forceRemoval := cmd.Bool("force")
+
 	containers, err := dc.client.ContainerList(context.Background(), container.ListOptions{All: true})
 	if err != nil {
 		slog.Debug("Error fetching container list", "error", err.Error())
@@ -129,7 +131,7 @@ func (dc *DockerClient) RemoveDockerContainers(ctx context.Context, cmd *cli.Com
 	var maxNameLen int = 0
 
 	for i := range containers {
-		if containers[i].State == container.StatePaused || containers[i].State == container.StateExited || containers[i].State == container.StateDead {
+		if forceRemoval || containers[i].State == container.StatePaused || containers[i].State == container.StateExited || containers[i].State == container.StateDead {
 			stoppedContainers = append(stoppedContainers, &ContainerItem{
 				ID:    containers[i].ID,
 				Name:  containers[i].Names[0],
@@ -162,7 +164,9 @@ func (dc *DockerClient) RemoveDockerContainers(ctx context.Context, cmd *cli.Com
 	}
 
 	for i := range selectedContainers {
-		err = dc.client.ContainerRemove(context.Background(), selectedContainers[i].ID, container.RemoveOptions{})
+		err = dc.client.ContainerRemove(context.Background(), selectedContainers[i].ID, container.RemoveOptions{
+			Force: forceRemoval,
+		})
 		if err != nil {
 			fmt.Printf("\x1b[31mx\x1b[0m Error Removing Container %s\n", selectedContainers[i].Name)
 			slog.Debug("Error Removing Container", "Container ID", selectedContainers[i].ID, "Error", err.Error())
@@ -181,6 +185,8 @@ func (dc *DockerClient) RemoveDockerImages(ctx context.Context, cmd *cli.Command
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 
+	forceRemoval := cmd.Bool("force")
+
 	images, err := dc.client.ImageList(context.Background(), image.ListOptions{All: true})
 	if err != nil {
 		slog.Debug("Error fetching image list", "error", err.Error())
@@ -197,7 +203,7 @@ func (dc *DockerClient) RemoveDockerImages(ctx context.Context, cmd *cli.Command
 	maxNameLen := 0
 
 	for i := range images {
-		if images[i].Containers <= 0 {
+		if forceRemoval || images[i].Containers <= 0 {
 			imagesList = append(imagesList, &ImageItem{
 				ID:   images[i].ID,
 				Name: images[i].RepoTags[0],
@@ -230,7 +236,9 @@ func (dc *DockerClient) RemoveDockerImages(ctx context.Context, cmd *cli.Command
 	}
 
 	for i := range selectedImages {
-		_, err = dc.client.ImageRemove(context.Background(), selectedImages[i].ID, image.RemoveOptions{})
+		_, err = dc.client.ImageRemove(context.Background(), selectedImages[i].ID, image.RemoveOptions{
+			Force: forceRemoval,
+		})
 		if err != nil {
 			fmt.Printf("\x1b[31mx\x1b[0m Error Removing Image %s\n", selectedImages[i].Name)
 			slog.Debug("Error Removing Image", "Image ID", selectedImages[i].ID, "Error", err.Error())

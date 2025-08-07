@@ -42,6 +42,11 @@ func main() {
 						Aliases: []string{"v"},
 						Usage:   "enable verbose output",
 					},
+					&cli.BoolFlag{
+						Name: "force",
+						Aliases: []string{"f"},
+						Usage: "enable force removal of running containers",
+					},
 				},
 				Action: dockerCLI.RemoveDockerContainers,
 			},
@@ -53,6 +58,11 @@ func main() {
 						Name:    "verbose",
 						Aliases: []string{"v"},
 						Usage:   "enable verbose output",
+					},
+					&cli.BoolFlag{
+						Name: "force",
+						Aliases: []string{"f"},
+						Usage: "enable force removal of docker images",
 					},
 				},
 				Action: dockerCLI.RemoveDockerImages,
